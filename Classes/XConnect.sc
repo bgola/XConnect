@@ -25,7 +25,7 @@ XConnect {
 	}
 
 	initXConnect { |oscServer|
-		nickname = if (nickname.asString.isEmpty) { XConnect.defaultName } { nickname };
+		nickname = if (nickname.asString.isEmpty) { Peer.defaultName } { nickname };
 
 		if (nickname.asString.isEmpty)  {
 			"Couldn't set a name automatically, please set your nickname: XConnect.nickname = 'somename';".warn;
@@ -63,6 +63,8 @@ XConnect {
 
 	}
 
+
+
 	gui {
 		Butz.curr = butz.name;
 		Butz.show;
@@ -80,20 +82,4 @@ XConnect {
 			peerWin.front;
 		}
 	}
-
-	// From Utopia Quark
-	*defaultName {
-        var cmd, name;
-        cmd = Platform.case(
-                \osx,       { "id -un" },
-                \linux,     { "id -un" },
-                \windows,   { "echo %username%" },
-            {""}
-        );
-        name = cmd.unixCmdGetStdOut;
-        if(name.size == 0, { name ="hostname".unixCmdGetStdOut });
-        name = name.replace("\n", "");
-        ^name;
-    }
-
 }

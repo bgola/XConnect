@@ -1,0 +1,10 @@
+(
+  name: "XConnect",
+  summary: "Cross connect everything",
+  version: "0.1",
+  schelp: "XConnect",
+  license: "GPL",
+  status: "experimental",
+  dependencies: ["adclib", "JITLibExtensions", "Utopia", "HyperDisCo"],
+  copyright: "Bruno Gola, Alberto de Campo, UdK 2023"
+)
