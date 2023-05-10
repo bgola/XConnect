@@ -3,6 +3,7 @@ XConnect {
 	var <key, <oscrouter, <butz, <syncText, <>postRunCode = false, <>postHistory = false;
 	var historyFunc, doItFunc;
 	var peerListWidget, peerListText;
+	var joined = false, showGUI = false;
 
 	*initClass {
 		all = ();
@@ -25,6 +26,11 @@ XConnect {
 		^xconnect;
 	}
 
+
+	peers {
+		^oscrouter.peers;
+	}
+
 	initXConnect { |oscServer|
 		nickname = if (nickname.asString.isEmpty) { Peer.defaultName } { nickname };
 
@@ -41,6 +47,7 @@ XConnect {
 	}
 
 	prOnJoin {
+		joined = true;
 		oscrouter.addResp('/oscrouter/userlist', {|msg|
 			if (peerListWidget.notNil) {
 				defer {
@@ -50,14 +57,36 @@ XConnect {
 				};
 			};
 		});
+
+		oscrouter.addResp('/getNdefs', {|msg|
+			var user = msg[1];
+			oscrouter.sendPrivate(user, this.getNdefs);
+		});
+
+
+		oscrouter.addPrivateResp(\ndefs, {|msg|
+			var sender = msg[0];
+			var ndefs = msg[1];
+			sender.post;
+			": ".post;
+			ndefs.postln;
+		});
+
 		this.prInitSyncText;
 		this.prMakeHistory;
-		butz = Butz("xconn-%".format(key).asSymbol);
-		butz.add(\Peers, {this.showPeersWindow});
-		butz.add(\SyncText, {this.syncText.showDoc});
-		butz.add(\History, {this.showHistory});
-		butz.add(\Public, {this.makePublic});
-		butz.add(\Private, {this.makePrivate});
+
+		defer {
+			butz = Butz("xconn-%".format(key).asSymbol);
+			butz.add(\Peers, {this.showPeersWindow});
+			butz.add(\SyncText, {this.syncText.showDoc});
+			butz.add(\History, {this.showHistory});
+			butz.add(\Public, {this.makePublic});
+			butz.add(\Private, {this.makePrivate});
+			if (showGUI) {
+				this.gui;
+				showGUI = false;
+			}
+		};
 	}
 
 	makePublic {
@@ -96,8 +125,14 @@ XConnect {
 	}
 
 	gui {
-		Butz.curr = butz.name;
-		Butz.show;
+		if (joined) {
+			defer {
+				Butz.curr = butz.name;
+				Butz.show;
+			};
+		} {
+			showGUI = true;
+		};
 	}
 
 	showPeersWindow {
@@ -149,8 +184,6 @@ XConnect {
 
 		History.forwardFunc = historyFunc;
 
-
-
 		doItFunc.add('runCode', { |msg|
 			var who = msg.postcs[1].asString;
 			var code = msg[2].asString;
@@ -188,4 +221,72 @@ XConnect {
 
 		oscrouter.addResp(\do_it, doItFunc);
 	}
+
+	listNdefs {
+		^Ndef.all.keys.asArray;
+	}
+
+	getNdefs {
+		oscrouter.sendMsg('/getNdefs', oscrouter.userName);
+	}
+}
+
+
+XOpenObject : OpenObject {
+	classvar <>oscrouter;
+
+	*addResponder { |addr, cmd, func|
+		if (oscrouter.isNil) {
+			"*** oscrouter is not set".warn;
+			^this;
+		};
+
+		oscrouter.addPrivateResp(cmd, { |... msg|
+			var res;
+			var sender = msg[0];
+			msg = msg[1][1..];
+			msg.postln;
+			// some type matching
+			if(msg[0].isNumber) {
+				// replyID name selector args ...
+				res = func.value(msg[1..]);
+				this.sendReply(sender, msg[0], res);
+			} {
+				// name selector args ...
+				func.value(msg[0..])
+			}
+		});
+	}
+
+	*sendReply { |to, id, args|
+		args = args.asOSCArgArray;
+		//addr.sendMsg("/oo_reply", id, *args);
+		this.oscrouter.sendPrivate(to.asSymbol, 'oo_reply', id, *args);
+	}
+
+	*openProxies {
+		[Pdef, Pdefn, Tdef, Fdef, Ndef].do { |class| class.xpublish(class.name) };
+		lookup = true;
+	}
+
+	*isListening {
+		^(this.oscrouter.privateResponderFuncs['/oo'].notNil && this.oscrouter.privateResponderFuncs['/oo_k'].notNil);
+	}
+
+}
+
+
++ Object {
+
+	xpublish { |name|
+		if(XOpenObject.objects.at(name).notNil) {
+			"XOpenObjects: overriding object with this name: %".format(name).warn
+		};
+		XOpenObject.put(name, this)
+	}
+
+	xunpublish { |name|
+		OpenObject.remove(this)
+	}
+
 }

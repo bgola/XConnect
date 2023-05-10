@@ -5,6 +5,6 @@
   schelp: "XConnect",
   license: "GPL",
   status: "experimental",
-  dependencies: ["adclib", "JITLibExtensions", "Utopia", "HyperDisCo"],
+  dependencies: ["adclib", "JITLibExtensions", "Utopia", "HyperDisCo", "OpenObject"],
   copyright: "Bruno Gola, Alberto de Campo, UdK 2023"
 )
