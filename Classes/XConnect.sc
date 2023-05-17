@@ -13,16 +13,17 @@ XConnect {
 		all = ();
 	}
 
-	*new { |key, nickname = nil, oscServer=nil|
+	*new { |key, nickname = "", oscServer=nil|
 		var xconnect;
 
 		if (oscServer.isNil) {
 			oscServer = NetAddr("gencomp.medienhaus.udk-berlin.de", 55555);
 		};
 
+		nickname = if (nickname.asString.isEmpty) { Peer.defaultName } { nickname };
+
 		if (all[key].isNil) { all[key] = () };
 
-		nickname = if (nickname.asString.isEmpty) { Peer.defaultName } { nickname };
 		xconnect = all[key][nickname];
 
 		if (xconnect.isNil) {
