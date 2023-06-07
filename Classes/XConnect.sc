@@ -1,7 +1,7 @@
 XConnect {
 	classvar <>all;
 	var <key, <nickname, <oscrouter, <butz, <syncText, <>postRunCode = false, <>postHistory = false;
-	var historyFunc, doItFunc;
+	var <historyFunc, <doItFunc;
 	var peerListWidget, peerListText;
 	var joined = false, showGUI = false;
 	var myProtocol;
@@ -40,6 +40,14 @@ XConnect {
 
 	protocol {
 		^myProtocol
+	}
+
+	runCode  { arg receive=false;
+		if (receive) {
+			doItFunc.enable(\runCode);
+		} {
+			doItFunc.disable(\runCode);
+		};
 	}
 
 	publishProtocol {
@@ -366,15 +374,19 @@ XRemoteObject {
 
 
 XJIT : XRemoteObject {
-	set {|...args|
-		this.xpeer.sendMsg('/oo', this.name, \set, *args);
-	}
-
 	get {|action ... args|
 		var replyID = 9999.rand;
 		xpeer.waitForReply(replyID, action);
 		this.xpeer.sendMsg('/oo', replyID, this.name, \get, *args);
 	}
+
+
+	/*
+	set {|...args|
+		this.xpeer.sendMsg('/oo', this.name, \set, *args);
+	}
+
+
 
 	play {|...args|
 		this.xpeer.sendMsg('/oo', this.name, \play, *args);
@@ -382,6 +394,10 @@ XJIT : XRemoteObject {
 
 	stop {|...args|
 		this.xpeer.sendMsg('/oo', this.name, \stop, *args);
+	}*/
+
+	doesNotUnderstand { arg selector ...args;
+		this.xpeer.sendMsg('/oo', this.name, selector, *args);
 	}
 }
 
